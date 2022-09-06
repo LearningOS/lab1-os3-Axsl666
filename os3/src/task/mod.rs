@@ -17,6 +17,7 @@ mod task;
 use crate::config::{MAX_APP_NUM, MAX_SYSCALL_NUM, CLOCK_FREQ};
 use crate::loader::{get_num_app, init_app_cx};
 use crate::sync::UPSafeCell;
+use crate::syscall;
 use crate::timer::get_time;
 use lazy_static::*;
 pub use switch::__switch;
@@ -157,7 +158,12 @@ impl TaskManager {
         let current = inner.current_task;
         let tcb = inner.tasks[current];
         let time = get_time();
-        (tcb.task_status,tcb.syscall_times,(time - tcb.start_time) * 1000 / CLOCK_FREQ)
+        let mut syscall_times_cp: [u32;MAX_SYSCALL_NUM] = [0;MAX_SYSCALL_NUM];
+        let len = tcb.syscall_times.len();
+        for i in 0..len {
+            syscall_times_cp[i] = tcb.syscall_times[i] as u32;
+        }
+        (tcb.task_status, syscall_times_cp ,(time - tcb.start_time) * 1000 / CLOCK_FREQ)
     }
 }
 
